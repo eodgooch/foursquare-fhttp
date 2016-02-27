@@ -4,9 +4,9 @@ version := "0.2.0"
 
 organization := "com.foursquare"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.10.4")
+crossScalaVersions := Seq("2.11.7", "2.10.4")
 
 libraryDependencies <++= (scalaVersion) { scalaVersion =>
   val v = scalaVersion match {
@@ -15,7 +15,7 @@ libraryDependencies <++= (scalaVersion) { scalaVersion =>
     case _ => "_" + scalaVersion
   }
   Seq(
-    "com.twitter"                   %  ("finagle-http" + v) % "6.24.0",
+    "com.twitter"                   %  ("finagle-http" + v) % "6.30.0",
     "commons-httpclient"            %  "commons-httpclient" % "3.1",
     "junit"                         %  "junit"              % "4.10"       % "test",
     "com.novocode"                  %  "junit-interface"    % "0.9"        % "test"
@@ -37,30 +37,14 @@ scalacOptions ++= Seq("-deprecation", "-unchecked")
 
 testFrameworks += new TestFramework("com.novocode.junit.JUnitFrameworkNoMarker")
 
+credentials += Credentials("Artifactory Realm", "localhost", System.getenv("ARTIFACTORY_UPLOADER"), System.getenv("ARTIFACTORY_UPLOADER_PASSWORD"))
+
 publishTo <<= (version) { v =>
   val nexus = "https://oss.sonatype.org/"
   if (v.endsWith("-SNAPSHOT"))
-    Some("snapshots" at nexus+"content/repositories/snapshots/")
+    Some("Artifactory Realm" at "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/sbt-local;build.timestamp=" + new java.util.Date().getTime)   
   else
-    Some("releases" at nexus+"service/local/staging/deploy/maven2")
-}
-
-credentials ++= {
-  val sonaType = ("Sonatype Nexus Repository Manager", "oss.sonatype.org")
-  def loadMavenCredentials(file: java.io.File) : Seq[Credentials] = {
-    xml.XML.loadFile(file) \ "servers" \ "server" map (s => {
-      val host = (s \ "id").text
-      val realm = if (host == sonaType._2) sonaType._1 else "Unknown"
-      Credentials(realm, host, (s \ "username").text, (s \ "password").text)
-    })
-  }
-  val ivyCredentials   = Path.userHome / ".ivy2" / ".credentials"
-  val mavenCredentials = Path.userHome / ".m2"   / "settings.xml"
-  (ivyCredentials.asFile, mavenCredentials.asFile) match {
-    case (ivy, _) if ivy.canRead => Credentials(ivy) :: Nil
-    case (_, mvn) if mvn.canRead => loadMavenCredentials(mvn)
-    case _ => Nil
-  }
+    Some("Artifactory Realm" at "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/sbt-local")
 }
 
 publishMavenStyle := true
